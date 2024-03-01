@@ -1,3 +1,14 @@
+-- Delete all Tables
+DO $$ 
+DECLARE 
+    tableName TEXT; 
+BEGIN 
+    FOR tableName IN SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' LOOP 
+        EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(tableName) || ' CASCADE'; 
+    END LOOP; 
+END $$;
+
+
 -- Employees Tables
 CREATE TABLE IF NOT EXISTS employees(
 	employeeID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY ,
@@ -6,12 +17,36 @@ CREATE TABLE IF NOT EXISTS employees(
 	empLName VARCHAR(35) NOT NULL,
 	empBirthDate timestamptz,
 	empAddress VARCHAR(255),
-	empDateHired timestamptz NOT NULL,
-	status varchar(10) CHECK (status IN ('active', 'inactive', 'pending'))
+	empDateHired timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	empStatus employee_status_type NOT NULL,
+	empGender sex_type NOT NULL,
+	empSalary INT NOT NULL CHECK (empSalary > 3000)
 );
 
-ALTER TABLE employees ALTER COLUMN empDateHired SET DEFAULT CURRENT_TIMESTAMP;
-ALTER TABLE employees ADD COLUMN IF NOT EXISTS employeeGender VARCHAR(10) CHECK (employeeGender IN ('male', 'female'));
+CREATE TABLE IF NOT EXISTS employeesAccounts(
+	employeeID INT REFERENCES employees,
+	custEmail varchar(254) NOT NULL,
+	custPasswordHash varchar(512) NOT NULL,
+	AccountCreatedDate TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+	PRIMARY KEY (employeeID)
+);
+
+CREATE TABLE IF NOT EXISTS salaryChanges(
+	salaryChangeID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	employeeID INT REFERENCES employees(employeeID),
+	changeMadeBy INT REFERENCES employees(employeeID),
+	changeDate TIMESTAMPTZ NOT NULL,
+	changeReason varchar(250)
+);
+
+CREATE TABLE IF NOT EXISTS employeesTransfers(
+	transferID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	employeeID INT REFERENCES employees(employeeID),
+	newBranchID INT , -- Foreign key altered after create branch table
+	transferMadeBy INT REFERENCES employees(employeeID),
+	transferDate TIMESTAMPTZ NOT NULL,
+	transferReason varchar(250)
+);
 
 CREATE TABLE IF NOT EXISTS employeesCallList(
 	phoneID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
@@ -58,7 +93,7 @@ CREATE TABLE IF NOT EXISTS positionsChanges(
 	changedByID INT REFERENCES employees,
 	previousPosID INT REFERENCES positions (positionID),
 	newPosID INT REFERENCES positions (positionID),
-	positionChangeStatues varchar(8) CHECK (positionChangeStatues IN ('promote', 'demote')) NOT NULL,
+	positionChangeStatues position_change_type NOT NULL,
 	positionChangeTime TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -66,10 +101,11 @@ CREATE TABLE IF NOT EXISTS positionsChanges(
 -- Clients Tables
 CREATE TABLE IF NOT EXISTS customers(
 	customerID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	custFirstName VARCHAR(35),
-	custLastName VARCHAR(35)
+	custFirstName VARCHAR(35) NOT NULL,
+	custLastName VARCHAR(35) NOT NULL,
+	custGender sex_type
+	
 );
-ALTER TABLE customers ADD COLUMN IF NOT EXISTS customerGender VARCHAR(10) CHECK (customerGender IN ('male', 'female'));
 
 CREATE TABLE IF NOT EXISTS customersAccounts(
 	accountID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
@@ -103,7 +139,7 @@ CREATE TABLE IF NOT EXISTS  friendsRequests(
 	senderAccountID INT REFERENCES customersAccounts,
 	receiverAccountID INT REFERENCES customersAccounts,
 	requestDate TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	friendRequestStatus VARCHAR(10) CHECK (friendRequestStatus IN ('pending', 'accepted', 'rejected')),
+	friendRequestStatus friend_request_type ,
 	statusActionTime TIMESTAMP
 );
 
@@ -132,6 +168,10 @@ CREATE TABLE IF NOT EXISTS  branches(
 	managerID INT REFERENCES employees (employeeID)
 );
 
+ALTER TABLE employeesTransfers ADD CONSTRAINT  employeestransfers_newbranchid_fkey
+FOREIGN KEY (newBranchID) 
+REFERENCES branches(branchID);
+
 
 CREATE TABLE IF NOT EXISTS  storages(
 	storageID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
@@ -149,8 +189,8 @@ CREATE TABLE IF NOT EXISTS  seasons(
 CREATE TABLE IF NOT EXISTS  ingredients(
 	ingredientID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	ingredientsName VARCHAR(35),
-	recipeIngredientsUnit VARCHAR(10) CHECK (recipeIngredientsUnit IN ('gram', 'milliliter', 'liter', 'piece','kilogram')),
-	shipmentIngredientsUnit	VARCHAR(10) CHECK (shipmentIngredientsUnit IN ('gram', 'milliliter', 'liter', 'piece','kilogram'))
+	recipeIngredientsUnit ingredients_unit_type ,
+	shipmentIngredientsUnit	ingredients_unit_type
 );
 
 
@@ -166,7 +206,7 @@ CREATE SEQUENCE IF NOT EXISTS table_id_seq;
 CREATE TABLE IF NOT EXISTS  branchTables(
 	branchID INT REFERENCES branches,
 	tableID INT NOT NULL DEFAULT nextval('table_id_seq') UNIQUE,
-	tableStatus VARCHAR(15) CHECK (tableStatus IN ('availabe', 'unavailabe')),
+	tableStatus table_status_type,
 	capacity SMALLINT CHECK (capacity >= 0),
 	PRIMARY KEY (branchID, tableID)
 );
@@ -188,7 +228,7 @@ CREATE TABLE IF NOT EXISTS  menuItems(
 CREATE TABLE IF NOT EXISTS  branchsMenu(
 	branchID INT REFERENCES branches,
 	itemID INT REFERENCES menuItems,
-	itemStatus VARCHAR(15) CHECK (itemStatus IN ('active', 'inactive', 'no ingredients')),
+	itemStatus menu_item_type,
 	itemDiscount NUMERIC(4, 2) check (itemDiscount > 0),
 	itemPrice NUMERIC(10, 2) check (itemPrice > 0) NOT NULL
 );
@@ -214,7 +254,7 @@ CREATE TABLE IF NOT EXISTS  recipes(
 	ingredientID INT REFERENCES ingredients,
 	itemID INT REFERENCES menuItems,
 	quantity smallint NOT NULL,
-	recipeStatus VARCHAR(15) CHECK (recipeStatus IN ('optional','required'))
+	recipeStatus recipe_type
 	
 );
 
@@ -240,7 +280,17 @@ CREATE TABLE IF NOT EXISTS  suppliers(
 	supplierID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	supplierFName VARCHAR(35) NOT NULL,
 	supplierLName VARCHAR(35),
-	supplierGender VARCHAR(10) CHECK (supplierGender IN ('male', 'female','company'))
+	supplierType VARCHAR(10) CHECK (supplierType IN ('male', 'female','company'))
+);
+
+
+CREATE TABLE IF NOT EXISTS  supplyCompaniesEmployees(
+	supplyCompEmpID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	companyID INT REFERENCES suppliers (supplierID),
+	supplyCompEmpFName VARCHAR(35) NOT NULL,
+	supplyCompEmpLName VARCHAR(35),
+	supplyCompEmpGender sex_type
+	
 );
 
 CREATE TABLE IF NOT EXISTS  suppliersCallList(
@@ -263,7 +313,7 @@ CREATE TABLE IF NOT EXISTS  stockOrdersDetails(
 	ingredientID INT REFERENCES ingredients,
 	quantity SMALLINT NOT NULL CHECK (quantity > 0),
 	arrivalTime TIMESTAMPTZ,
-	ingredientOrderStatus VARCHAR(10) CHECK (ingredientOrderStatus IN ('pending', 'confirmed', 'cancelled', 'completed'))
+	ingredientOrderStatus order_status_type
 );
 
 CREATE TABLE IF NOT EXISTS  BranchesStockOrders(
@@ -293,7 +343,7 @@ CREATE TABLE IF NOT EXISTS  shipmentsDetails(
 	ingredientQuantity SMALLINT CHECK (ingredientQuantity > 0),
 	pricePerUnit NUMERIC(10,2),
 	arrivalTime TIMESTAMPTZ,
-	ingredientShipmentStatus VARCHAR(10) CHECK (ingredientShipmentStatus IN ('pending', 'confirmed', 'cancelled', 'completed'))
+	ingredientShipmentStatus order_status_type
 );
 
 
@@ -307,9 +357,20 @@ CREATE TABLE IF NOT EXISTS  Orders(
 	customerPhoneID INT REFERENCES CustomersPhonesList,
 	orderDate TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 	shipDate TIMESTAMPTZ,
-	orderType VARCHAR(15) CHECK (orderType IN ('delivey','lounge','takeaway')),
+	order_type order_type ,
+	orderStaus order_status_type,
 	orderTotalPrice NUMERIC(10,2) CHECK (orderTotalPrice > 0),
-	orderCustomDiscount NUMERIC(4,2) CHECK (orderCustomDiscount > 0)
+	orderCustomerDiscount NUMERIC(4,2) CHECK (orderCustomerDiscount > 0),
+	orderPaymentMethod payment_method_type
+);
+
+CREATE TABLE IF NOT EXISTS  ordersCreditDetails(
+	orderID  INT REFERENCES Orders,
+	creditCardNumber varchar(16) NOT NULL,
+	creditCardExperMonth SMALLINT NOT NULL CHECK (creditCardExperMonth >= 1 AND creditCardExperMonth <= 12),
+	creditCardExperDay SMALLINT NOT NULL CHECK (creditCardExperDay >= 1 AND creditCardExperDay <= 31),
+	nameOnCard VARCHAR(35) NOT NULL,
+	PRIMARY KEY (orderID)
 	
 );
 
@@ -356,7 +417,7 @@ CREATE TABLE IF NOT EXISTS  bookings(
 	bookingDate TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	bookingStartTime TIMESTAMPTZ NOT NULL,
 	bookingEndTime TIMESTAMPTZ NOT NULL,
-	bookingStatus VARCHAR(10) CHECK (bookingStatus IN ('pending', 'confirmed', 'cancelled', 'completed')),
+	bookingStatus order_status_type,
 
 	FOREIGN KEY (branchID, tableID) REFERENCES branchTables(branchID, tableID)
 );
