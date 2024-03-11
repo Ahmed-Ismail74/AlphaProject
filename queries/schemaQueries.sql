@@ -1,3 +1,10 @@
+-- SELECT * FROM pg_indexes where table_name = 'customers';
+
+-- CREATE INDEX idx_text ON customers USING HASH (custfirstname);
+-- drop index idx_text;
+
+-- EXPLAIN SELECT * FROM customers WHERE custfirstname LIKE 'a%';
+
 -- Delete all Tables
 DO $$ 
 DECLARE 
@@ -5,425 +12,435 @@ DECLARE
 BEGIN 
     FOR tableName IN SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' LOOP 
         EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(tableName) || ' CASCADE'; 
-    END LOOP; 
+    END LOOP;
+	
 END $$;
 
 
 -- Employees Tables
 CREATE TABLE IF NOT EXISTS employees(
-	employeeID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY ,
-	SSN CHAR(14) UNIQUE,
-	empFName VARCHAR(35) NOT NULL,
-	empLName VARCHAR(35) NOT NULL,
-	empBirthDate timestamptz,
-	empAddress VARCHAR(255),
-	empDateHired timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	empStatus employee_status_type NOT NULL,
-	empGender sex_type NOT NULL,
-	empSalary INT NOT NULL CHECK (empSalary > 3000)
+	employee_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY ,
+	employee_ssn CHAR(14) UNIQUE,
+	employee_first_name VARCHAR(35) NOT NULL,
+	employee_last_name VARCHAR(35) NOT NULL,
+	employee_birthdate DATE,
+	employee_address VARCHAR(255),
+	employee_date_hired timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	employee_status employee_status_type NOT NULL,
+	employee_gender sex_type NOT NULL,
+	employee_salary INT NOT NULL CHECK (employee_salary > 3000)
+);
+CREATE TABLE IF NOT EXISTS employees_accounts(
+	employee_id INT REFERENCES employees ON DELETE RESTRICT ON UPDATE CASCADE,
+	employee_email varchar(254) NOT NULL UNIQUE,
+	employee_password varchar(512) NOT NULL,
+	account_created_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+	PRIMARY KEY (employee_id)
 );
 
-CREATE TABLE IF NOT EXISTS employeesAccounts(
-	employeeID INT REFERENCES employees,
-	custEmail varchar(254) NOT NULL,
-	custPasswordHash varchar(512) NOT NULL,
-	AccountCreatedDate TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-	PRIMARY KEY (employeeID)
+CREATE TABLE IF NOT EXISTS salary_changes(
+	salary_change_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	employee_id INT REFERENCES employees(employee_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+	change_made_by INT REFERENCES employees(employee_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+	change_date TIMESTAMPTZ NOT NULL,
+	change_reason varchar(250)
 );
 
-CREATE TABLE IF NOT EXISTS salaryChanges(
-	salaryChangeID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	employeeID INT REFERENCES employees(employeeID),
-	changeMadeBy INT REFERENCES employees(employeeID),
-	changeDate TIMESTAMPTZ NOT NULL,
-	changeReason varchar(250)
+CREATE TABLE IF NOT EXISTS employees_transfers(
+	transfer_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	employee_id INT REFERENCES employees(employee_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+	newbranch_id INT , -- Foreign key altered after create branch table
+	transfer_made_by INT REFERENCES employees(employee_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+	transfer_date TIMESTAMPTZ NOT NULL,
+	transfer_reason varchar(250)
 );
 
-CREATE TABLE IF NOT EXISTS employeesTransfers(
-	transferID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	employeeID INT REFERENCES employees(employeeID),
-	newBranchID INT , -- Foreign key altered after create branch table
-	transferMadeBy INT REFERENCES employees(employeeID),
-	transferDate TIMESTAMPTZ NOT NULL,
-	transferReason varchar(250)
+CREATE TABLE IF NOT EXISTS employees_call_list(
+	employees_phone_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	employee_id INT REFERENCES employees ON DELETE RESTRICT ON UPDATE CASCADE,
+	employees_phone VARCHAR(15) NOT NULL CHECK (employees_phone ~ '^[0-9]+$') 	
 );
 
-CREATE TABLE IF NOT EXISTS employeesCallList(
-	phoneID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	employeeID INT REFERENCES employees,
-	employeePhone VARCHAR(15) NOT NULL CHECK (employeePhone ~ '^[0-9]+$') 	
-);
 
-CREATE TABLE IF NOT EXISTS employeesAddressesList(
-	EmployeeAddressID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	employeeID INT REFERENCES employees,
-	employeeAddress VARCHAR(95) NOT NULL,
-	city varchar(35),
-	locationCoordinates point
-);
+-- CREATE TABLE IF NOT EXISTS employees_addresses_list(
+-- 	employee_address_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+-- 	employee_id INT REFERENCES employees ON DELETE RESTRICT ON UPDATE CASCADE,
+-- 	employees_address VARCHAR(95) NOT NULL,
+-- 	city varchar(35),
+-- 	location_coordinates point
+-- );
 
-CREATE TABLE IF NOT EXISTS employeeVacations(
-	vacationID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	employeeID INT REFERENCES employees,
-	vacationStartDate TIMESTAMPTZ NOT NULL,
-	vacationEndDate TIMESTAMPTZ NOT NULL,
-	vacationReason varchar(255) NOT NULL
+CREATE TABLE IF NOT EXISTS employee_vacations(
+	vacation_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	employee_id INT REFERENCES employees ON DELETE RESTRICT ON UPDATE CASCADE,
+	vacation_start_date TIMESTAMPTZ NOT NULL,
+	vacation_end_date TIMESTAMPTZ NOT NULL,
+	vacation_reason varchar(255) NOT NULL
 );
-CREATE TABLE IF NOT EXISTS employeesWorkDays(
-	workDayID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	employeeID INT REFERENCES employees,
-	shiftStartTime TIMESTAMPTZ,
-	shiftEndTime TIMESTAMPTZ NOT NULL
+CREATE TABLE IF NOT EXISTS employee_work_days(
+	work_day_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	employee_id INT REFERENCES employees ON DELETE RESTRICT ON UPDATE CASCADE,
+	shift_start_time TIMESTAMPTZ,
+	shift_end_time TIMESTAMPTZ NOT NULL
 );
-CREATE TABLE IF NOT EXISTS  employeesAttendance(
-	workDayID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY ,
-	employeeID INT REFERENCES employees,
-	timeIn TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	timeOut TIMESTAMPTZ
+CREATE TABLE IF NOT EXISTS  employee_attendance(
+	work_day_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY ,
+	employee_id INT REFERENCES employees ON DELETE RESTRICT ON UPDATE CASCADE,
+	date_in TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	date_out TIMESTAMPTZ
 );
 
 CREATE TABLE IF NOT EXISTS positions(
-	positionID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	postionName varchar(25) NOT NULL,
-	jobDescription varchar(255)
+	position_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	position_name varchar(25) NOT NULL,
+	job_description varchar(255)
 );
-CREATE TABLE IF NOT EXISTS positionsChanges(
-	positionChangeID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	employeeID INT REFERENCES employees,
-	changedByID INT REFERENCES employees,
-	previousPosID INT REFERENCES positions (positionID),
-	newPosID INT REFERENCES positions (positionID),
-	positionChangeStatues position_change_type NOT NULL,
-	positionChangeTime TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE IF NOT EXISTS positions_changes(
+	position_change_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	employee_id INT REFERENCES employees ON DELETE RESTRICT ON UPDATE CASCADE,
+	position_changer_id INT REFERENCES employees ON DELETE RESTRICT ON UPDATE CASCADE,
+	previous_position INT REFERENCES positions (position_id),
+	new_position INT REFERENCES positions (position_id),
+	position_change_type position_change_type NOT NULL,
+	position_change_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 
 -- Clients Tables
 CREATE TABLE IF NOT EXISTS customers(
-	customerID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	custFirstName VARCHAR(35) NOT NULL,
-	custLastName VARCHAR(35) NOT NULL,
-	custGender sex_type
-	
+	customer_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	customer_first_name VARCHAR(35) NOT NULL,
+	customer_last_name VARCHAR(35) NOT NULL,
+	customer_gender sex_type,
+	employee_birthdate DATE
 );
 
-CREATE TABLE IF NOT EXISTS customersAccounts(
-	accountID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	customerID INT REFERENCES customers,
-	custEmail varchar(254) NOT NULL,
-	custPasswordHash varchar(512) NOT NULL,
-	AccountCreatedDate TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE IF NOT EXISTS customers_accounts(
+	account_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	customer_id INT REFERENCES customers ON DELETE RESTRICT ON UPDATE CASCADE,
+	customer_email varchar(254) NOT NULL UNIQUE,
+	customer_password varchar(512) NOT NULL,
+	account_created_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS  customersAddressesList(
-	addressID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	customerID INT REFERENCES customers,
-	custAddress VARCHAR(95) NOT NULL,
-	custCity VARCHAR(35),
-	locationCoordinates POINT
+CREATE TABLE IF NOT EXISTS  customers_addresses_list(
+	address_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	customer_id INT REFERENCES customers ON DELETE RESTRICT ON UPDATE CASCADE,
+	customer_address VARCHAR(95) NOT NULL,
+	customer_city VARCHAR(35),
+	location_coordinates POINT
 );
-CREATE TABLE IF NOT EXISTS  customersPhonesList(
-	customerPhoneID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	customerID INT REFERENCES customers,
-	cutomerPhone VARCHAR(15) NOT NULL CHECK (cutomerPhone ~ '^[0-9]+$')	
+CREATE TABLE IF NOT EXISTS  customers_phones_list(
+	customer_phone_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	customer_id INT REFERENCES customers ON DELETE RESTRICT ON UPDATE CASCADE,
+	customer_phone VARCHAR(15) NOT NULL CHECK (customer_phone ~ '^[0-9]+$')	
 );
 
 CREATE TABLE IF NOT EXISTS  friendships(
-	friendshipID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	accountID INT REFERENCES customersAccounts,
-	friendAccountID	INT REFERENCES customersAccounts
+	friendship_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	account_id INT REFERENCES customers_accounts(account_id),
+	friend_account_id	INT REFERENCES customers_accounts(account_id)
 );
 
-CREATE TABLE IF NOT EXISTS  friendsRequests(
-	friendshipRequestID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	senderAccountID INT REFERENCES customersAccounts,
-	receiverAccountID INT REFERENCES customersAccounts,
-	requestDate TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	friendRequestStatus friend_request_type ,
-	statusActionTime TIMESTAMP
+CREATE TABLE IF NOT EXISTS  friends_requests(
+	friendship_request_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	sender_account_id INT REFERENCES customers_accounts (account_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+	receiver_account_id INT REFERENCES customers_accounts (account_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+	request_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	friend_request_status friend_request_type ,
+	request_reply_time TIMESTAMP
 );
-
 
 
 
 -- Orgnization Tables
 
 CREATE TABLE IF NOT EXISTS  sections(
-	sectionID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	sectionName VARCHAR(35) UNIQUE NOT NULL,
-	sectionDescription VARCHAR(254)
+	section_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	section_name VARCHAR(35) UNIQUE NOT NULL,
+	section_description VARCHAR(254)
 );
 
 CREATE TABLE IF NOT EXISTS  categories(
-	categoryID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	sectionID INT REFERENCES sections,
-	categoryName VARCHAR(35) UNIQUE NOT NULL,
-	categoryDescription	VARCHAR(254)
+	category_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	section_id INT REFERENCES sections ON DELETE RESTRICT ON UPDATE CASCADE,
+	category_name VARCHAR(35) UNIQUE NOT NULL,
+	category_description	VARCHAR(254)
 );
 
 
 CREATE TABLE IF NOT EXISTS  branches(
-	branchID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	branchAddress VARCHAR(95) NOT NULL,
-	managerID INT REFERENCES employees (employeeID)
+	branch_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	branch_name VARCHAR(35) UNIQUE NOT NULL,
+	branch_address VARCHAR(95) NOT NULL,
+	branch_phone VARCHAR(15) NOT NULL CHECK (branch_phone  ~ '^[0-9]+$'),
+	manager_id INT REFERENCES employees (employee_id) ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
-ALTER TABLE employeesTransfers ADD CONSTRAINT  employeestransfers_newbranchid_fkey
-FOREIGN KEY (newBranchID) 
-REFERENCES branches(branchID);
+ALTER TABLE employees_transfers ADD CONSTRAINT  employees_transfers_newbranch_id_fkey
+FOREIGN KEY (newbranch_id) 
+REFERENCES branches(branch_id) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 
 CREATE TABLE IF NOT EXISTS  storages(
-	storageID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	managerID INT REFERENCES employees (employeeID),
-	address VARCHAR(95) NOT NULL
+	storage_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	manager_id INT REFERENCES employees (employee_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+	storage_address VARCHAR(95) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS  seasons(
-	seasonID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	seasonName VARCHAR(35),
-	seasonDescription VARCHAR(254)
+	season_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	season_name VARCHAR(35),
+	season_description VARCHAR(254)
 
 );
 
 CREATE TABLE IF NOT EXISTS  ingredients(
-	ingredientID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	ingredientsName VARCHAR(35),
-	recipeIngredientsUnit ingredients_unit_type ,
-	shipmentIngredientsUnit	ingredients_unit_type
+	ingredient_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	ingredients_name VARCHAR(35),
+	recipe_ingredients_unit ingredients_unit_type ,
+	shipment_ingredients_unit	ingredients_unit_type
 );
 
 
-CREATE TABLE IF NOT EXISTS  branchSections(
-	branchID INT REFERENCES branches,
-	sectionID INT REFERENCES sections,
-	managerID INT REFERENCES employees (employeeID),
-	PRIMARY KEY (branchID, sectionID)
+CREATE TABLE IF NOT EXISTS  branch_sections(
+	branch_id INT REFERENCES branches,
+	section_id INT REFERENCES sections,
+	manager_id INT REFERENCES employees (employee_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+	PRIMARY KEY (branch_id, section_id)
 );
+-- create Index
 
 CREATE SEQUENCE IF NOT EXISTS table_id_seq;
 
-CREATE TABLE IF NOT EXISTS  branchTables(
-	branchID INT REFERENCES branches,
-	tableID INT NOT NULL DEFAULT nextval('table_id_seq') UNIQUE,
-	tableStatus table_status_type,
+CREATE TABLE IF NOT EXISTS  branch_tables(
+	branch_id INT REFERENCES branches ON DELETE RESTRICT ON UPDATE CASCADE,
+	table_id INT NOT NULL DEFAULT nextval('table_id_seq') UNIQUE,
+	table_status table_status_type,
 	capacity SMALLINT CHECK (capacity >= 0),
-	PRIMARY KEY (branchID, tableID)
+	PRIMARY KEY (branch_id, table_id)
+);
+-- create Index
+
+CREATE TABLE IF NOT EXISTS  branches_stock(
+	branch_id INT REFERENCES branches ON DELETE RESTRICT ON UPDATE CASCADE,
+	ingredient_id INT REFERENCES ingredients ON DELETE RESTRICT ON UPDATE CASCADE,
+	ingredients_quantity SMALLINT CHECK (ingredients_quantity >= 0)
 );
 
-CREATE TABLE IF NOT EXISTS  branchesStock(
-	branchID INT REFERENCES branches,
-	ingredientID INT REFERENCES ingredients,
-	ingredientsQuantity SMALLINT CHECK (ingredientsQuantity >= 0)
+CREATE TABLE IF NOT EXISTS  menu_items(
+	item_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	item_name VARCHAR(35) NOT NULL UNIQUE,
+	category_id INT REFERENCES categories ON DELETE RESTRICT ON UPDATE CASCADE,
+	item_description VARCHAR(254) NOT NULL,
+	preparation_time INTERVAL 
 );
 
-CREATE TABLE IF NOT EXISTS  menuItems(
-	itemID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	itemName VARCHAR(35) NOT NULL UNIQUE,
-	categoryID INT REFERENCES categories,
-	itemDescription VARCHAR(254) NOT NULL,
-	preparationTime INTERVAL 
+CREATE TABLE IF NOT EXISTS  branchs_menu(
+	branch_id INT REFERENCES branches ON DELETE RESTRICT ON UPDATE CASCADE,
+	item_id INT REFERENCES menu_items ON DELETE RESTRICT ON UPDATE CASCADE,
+	item_status menu_item_type,
+	item_discount NUMERIC(4, 2) check (item_discount > 0),
+	item_price NUMERIC(10, 2) check (item_price > 0) NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS  branchsMenu(
-	branchID INT REFERENCES branches,
-	itemID INT REFERENCES menuItems,
-	itemStatus menu_item_type,
-	itemDiscount NUMERIC(4, 2) check (itemDiscount > 0),
-	itemPrice NUMERIC(10, 2) check (itemPrice > 0) NOT NULL
+CREATE TABLE IF NOT EXISTS  items_price_changes(
+	cost_change_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	branch_id INT REFERENCES branches ON DELETE RESTRICT ON UPDATE CASCADE,
+	item_id INT REFERENCES menu_items ON DELETE RESTRICT ON UPDATE CASCADE,
+	item_cost_changed_by INT REFERENCES employees(employee_id),
+	change_type varchar(10) CHECK (change_type IN ('discount','price')),
+	new_value NUMERIC(10, 2) CHECK (new_value > 0)
 );
 
-CREATE TABLE IF NOT EXISTS  itemsCostChanges(
-	costChangeID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	branchID INT REFERENCES branches,
-	itemID INT REFERENCES menuItems,
-	itemCostChangedBy INT REFERENCES employees(employeeID),
-	changeType varchar(10) CHECK (changeType IN ('discount','price')),
-	newValue NUMERIC(10, 2) CHECK (newValue > 0)
+CREATE TABLE IF NOT EXISTS  items_seasons(
+	season_id INT REFERENCES seasons ON DELETE RESTRICT ON UPDATE CASCADE,
+	item_id INT REFERENCES menu_items ON DELETE RESTRICT ON UPDATE CASCADE,
+	PRIMARY KEY (season_id, item_id)
 );
 
-CREATE TABLE IF NOT EXISTS  itemsSeasons(
-	seasonID INT REFERENCES seasons,
-	itemID INT REFERENCES menuItems,
-	PRIMARY KEY (seasonID, itemID)
-);
-
+-- create Index
 
 CREATE TABLE IF NOT EXISTS  recipes(
-	recipeID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	ingredientID INT REFERENCES ingredients,
-	itemID INT REFERENCES menuItems,
+	recipe_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	ingredient_id INT REFERENCES ingredients ON DELETE RESTRICT ON UPDATE CASCADE,
+	item_id INT REFERENCES menu_items ON DELETE RESTRICT ON UPDATE CASCADE,
 	quantity smallint NOT NULL,
-	recipeStatus recipe_type
+	recipe_status recipe_type
 	
 );
 
-CREATE TABLE IF NOT EXISTS  storagesStock(
-	storageID INT REFERENCES storages,
-	ingredientID INT REFERENCES ingredients,
-	inStockQuantity	smallint NOT NULL,
-	PRIMARY KEY(storageID, ingredientID)
+CREATE TABLE IF NOT EXISTS  storages_stock(
+	storage_id INT REFERENCES storages ON DELETE RESTRICT ON UPDATE CASCADE,
+	ingredient_id INT REFERENCES ingredients ON DELETE RESTRICT ON UPDATE CASCADE,
+	in_stock_quantity	smallint NOT NULL,
+	primary key (storage_id, ingredient_id)
 );
 
-CREATE TABLE IF NOT EXISTS  branchesStaff(
-	employeeID INT REFERENCES employees ,
-	branchID INT REFERENCES branches,
-	sectionID INT REFERENCES sections,
-	positionID INT REFERENCES positions,
-	PRIMARY KEY (employeeID, branchID)
+CREATE TABLE IF NOT EXISTS  branches_staff(
+	employee_id INT REFERENCES employees ON DELETE RESTRICT ON UPDATE CASCADE,
+	branch_id INT REFERENCES branches ON DELETE RESTRICT ON UPDATE CASCADE,
+	section_id INT REFERENCES sections ON DELETE RESTRICT ON UPDATE CASCADE,
+	position_id INT REFERENCES positions ON DELETE RESTRICT ON UPDATE CASCADE,
+	PRIMARY KEY (employee_id, branch_id)
 );
 
-
+-- create Index
 
 -- Shipmnets Tables
 CREATE TABLE IF NOT EXISTS  suppliers(
-	supplierID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	supplierFName VARCHAR(35) NOT NULL,
-	supplierLName VARCHAR(35),
-	supplierType VARCHAR(10) CHECK (supplierType IN ('male', 'female','company'))
+	supplier_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	supplier_first_name VARCHAR(35) NOT NULL,
+	supplier_last_name VARCHAR(35),
+	supplier_type VARCHAR(10) CHECK (supplier_type IN ('male', 'female','company'))
 );
 
 
-CREATE TABLE IF NOT EXISTS  supplyCompaniesEmployees(
-	supplyCompEmpID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	companyID INT REFERENCES suppliers (supplierID),
-	supplyCompEmpFName VARCHAR(35) NOT NULL,
-	supplyCompEmpLName VARCHAR(35),
-	supplyCompEmpGender sex_type
+CREATE TABLE IF NOT EXISTS  supply_companies_employees(
+	supply_empolyee_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	supply_company_id INT REFERENCES suppliers (supplier_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+	supply_emp_first_name VARCHAR(35) NOT NULL,
+	supply_emp_last_name VARCHAR(35),
+	supply_emp_gender sex_type
 	
 );
 
-CREATE TABLE IF NOT EXISTS  suppliersCallList(
-	supplierPhoneID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	supplierID INT REFERENCES suppliers,
-	phoneNumber VARCHAR(15) NOT NULL CHECK (phoneNumber ~ '^[0-9]+$')	
+CREATE TABLE IF NOT EXISTS  suppliers_call_list(
+	supplier_phone_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	supplier_id INT REFERENCES suppliers ON DELETE RESTRICT ON UPDATE CASCADE,
+	supplier_phone_number VARCHAR(15) NOT NULL CHECK (supplier_phone_number ~ '^[0-9]+$')	
 );
 
-CREATE TABLE IF NOT EXISTS  supplierAddressesList(
-	supplierAddressID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	supplierIDINT INT REFERENCES suppliers,
-	supplierAddress VARCHAR(95) NOT NULL,
+CREATE TABLE IF NOT EXISTS  supplier_addresses_list(
+	supplieraddress_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	supplier_id INT REFERENCES suppliers ON DELETE RESTRICT ON UPDATE CASCADE,
+	supplier_address VARCHAR(95) NOT NULL,
 	city VARCHAR(35), 
-	locationCoordinates	point
+	location_coordinates	point
 );
 
-CREATE TABLE IF NOT EXISTS  stockOrdersDetails(
-	stockOrderID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	storageID INT REFERENCES storages,
-	ingredientID INT REFERENCES ingredients,
+CREATE TABLE IF NOT EXISTS  stock_orders_details(
+	stockorder_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	storage_id INT REFERENCES storages ON DELETE RESTRICT ON UPDATE CASCADE,
+	ingredient_id INT REFERENCES ingredients ON DELETE RESTRICT ON UPDATE CASCADE,
 	quantity SMALLINT NOT NULL CHECK (quantity > 0),
-	arrivalTime TIMESTAMPTZ,
-	ingredientOrderStatus order_status_type
+	arrival_time TIMESTAMPTZ,
+	ingredient_order_status order_status_type
 );
 
-CREATE TABLE IF NOT EXISTS  BranchesStockOrders(
-	stockOrderID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	branchID INT REFERENCES branches,
-	orderedemployeeID INT REFERENCES employees,
-	RequestTime TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
+CREATE TABLE IF NOT EXISTS  branches_stock_orders(
+	stockorder_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	branch_id INT REFERENCES branches ON DELETE RESTRICT ON UPDATE CASCADE,
+	ordered_employee_id INT REFERENCES employees(employee_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+	request_time TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS  ingredientsSuppliers(
-	supplierID INT REFERENCES suppliers,
-	ingredientID INT REFERENCES ingredients,
-	PRIMARY KEY(supplierID, ingredientID)
+CREATE TABLE IF NOT EXISTS  ingredients_suppliers(
+	supplier_id INT REFERENCES suppliers ON DELETE RESTRICT ON UPDATE CASCADE,
+	ingredient_id INT REFERENCES ingredients ON DELETE RESTRICT ON UPDATE CASCADE,
+	primary key (supplier_id, ingredient_id)
 );
 
-CREATE TABLE IF NOT EXISTS  ingredientsShipments(
-	shipmentID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	orderedemployeeID INT REFERENCES employees,
-	storageID INT REFERENCES storages,
-	RequestTime	TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
+-- create Index
+CREATE TABLE IF NOT EXISTS  ingredients_shipments(
+	shipment_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	ordered_employee_id INT REFERENCES employees ON DELETE RESTRICT ON UPDATE CASCADE,
+	storage_id INT REFERENCES storages ON DELETE RESTRICT ON UPDATE CASCADE,
+	request_time TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS  shipmentsDetails(
-	shipmentID INT REFERENCES ingredientsShipments,
-	supplierID INT REFERENCES suppliers,
-	ingredientID INT REFERENCES ingredients,
-	ingredientQuantity SMALLINT CHECK (ingredientQuantity > 0),
-	pricePerUnit NUMERIC(10,2),
-	arrivalTime TIMESTAMPTZ,
-	ingredientShipmentStatus order_status_type
+CREATE TABLE IF NOT EXISTS  shipments_details(
+	shipment_id INT REFERENCES ingredients_shipments ON DELETE RESTRICT ON UPDATE CASCADE,
+	supplier_id INT REFERENCES suppliers ON DELETE RESTRICT ON UPDATE CASCADE,
+	ingredient_id INT REFERENCES ingredients ON DELETE RESTRICT ON UPDATE CASCADE,
+	ingredient_quantity SMALLINT CHECK (ingredient_quantity > 0),
+	price_per_unit NUMERIC(10,2),
+	arrival_time TIMESTAMPTZ,
+	ingredient_shipment_status order_status_type
 );
 
 
--- Orders Tables
+-- orders Tables
 
-CREATE TABLE IF NOT EXISTS  Orders(
-	orderID  INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	customerID  INT REFERENCES customers,
-	branchID INT REFERENCES branches,
-	addressID INT REFERENCES CustomersAddressesList,
-	customerPhoneID INT REFERENCES CustomersPhonesList,
-	orderDate TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-	shipDate TIMESTAMPTZ,
+CREATE TABLE IF NOT EXISTS  orders(
+	order_id  INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	customer_id  INT REFERENCES customers ON DELETE RESTRICT ON UPDATE CASCADE,
+	branch_id INT REFERENCES branches ON DELETE RESTRICT ON UPDATE CASCADE,
+	address_id INT REFERENCES customers_addresses_list ON DELETE RESTRICT ON UPDATE CASCADE,
+	customer_phone_id INT REFERENCES customers_phones_list ON DELETE RESTRICT ON UPDATE CASCADE,
+	order_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+	ship_date TIMESTAMPTZ,
 	order_type order_type ,
-	orderStaus order_status_type,
-	orderTotalPrice NUMERIC(10,2) CHECK (orderTotalPrice > 0),
-	orderCustomerDiscount NUMERIC(4,2) CHECK (orderCustomerDiscount > 0),
-	orderPaymentMethod payment_method_type
+	order_staus order_status_type,
+	order_total_price NUMERIC(10,2) CHECK (order_total_price > 0),
+	order_customer_discount NUMERIC(4,2) CHECK (order_customer_discount > 0),
+	order_payment_method payment_method_type
 );
 
-CREATE TABLE IF NOT EXISTS  ordersCreditDetails(
-	orderID  INT REFERENCES Orders,
-	creditCardNumber varchar(16) NOT NULL,
-	creditCardExperMonth SMALLINT NOT NULL CHECK (creditCardExperMonth >= 1 AND creditCardExperMonth <= 12),
-	creditCardExperDay SMALLINT NOT NULL CHECK (creditCardExperDay >= 1 AND creditCardExperDay <= 31),
-	nameOnCard VARCHAR(35) NOT NULL,
-	PRIMARY KEY (orderID)
+CREATE TABLE IF NOT EXISTS  orders_credit_details(
+	order_id  INT REFERENCES orders ON DELETE RESTRICT ON UPDATE CASCADE,
+	credit_card_number varchar(16) NOT NULL,
+	credit_card_exper_month SMALLINT NOT NULL CHECK (credit_card_exper_month >= 1 AND credit_card_exper_month <= 12),
+	credit_card_exper_day SMALLINT NOT NULL CHECK (credit_card_exper_day >= 1 AND credit_card_exper_day <= 31),
+	name_on_card VARCHAR(35) NOT NULL,
+	PRIMARY KEY (order_id)
 	
 );
 
-CREATE TABLE IF NOT EXISTS  VirtualOrdersItems(
-	orderID  INT REFERENCES orders,
-	customerID  INT REFERENCES customers,
-	itemID INT REFERENCES menuItems,
+CREATE TABLE IF NOT EXISTS  virtual_orders_items(
+	order_id  INT REFERENCES orders ON DELETE RESTRICT ON UPDATE CASCADE,
+	customer_id  INT REFERENCES customers ON DELETE RESTRICT ON UPDATE CASCADE,
+	item_id INT REFERENCES menu_items ON DELETE RESTRICT ON UPDATE CASCADE,
 	quantity SMALLINT CHECK (quantity > 0) NOT NULL,
-	quotePrice NUMERIC(6,2) CHECK (quotePrice > 0),
-	PRIMARY KEY (orderID, customerID, itemID)
+	quote_price NUMERIC(6,2) CHECK (quote_price > 0),
+	PRIMARY KEY (order_id, customer_id, item_id)
 );
 
+-- create Index
 
-CREATE TABLE IF NOT EXISTS  offlineOrdersItems(
-	orderID  INT REFERENCES orders,
-	itemID INT REFERENCES menuItems,
+CREATE TABLE IF NOT EXISTS  offline_orders_items(
+	order_id  INT REFERENCES orders ON DELETE RESTRICT ON UPDATE CASCADE,
+	item_id INT REFERENCES menu_items ON DELETE RESTRICT ON UPDATE CASCADE,
 	quantity SMALLINT CHECK (quantity > 0) NOT NULL,
-	quotePrice NUMERIC(6,2) CHECK (quotePrice > 0),
-	PRIMARY KEY (orderID, itemID)
+	quote_price NUMERIC(6,2) CHECK (quote_price > 0),
+	PRIMARY KEY (order_id, item_id)
+);
+-- create Index
+
+CREATE TABLE IF NOT EXISTS  lounge_orders(
+	order_id  INT ,
+	table_id INT ,
+	FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+	FOREIGN KEY (table_id) REFERENCES branch_tables(table_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+	PRIMARY KEY (order_id, table_id)
 );
 
-CREATE TABLE IF NOT EXISTS  loungeOrders(
-	orderID  INT ,
-	tableID INT ,
-	FOREIGN KEY (orderID) REFERENCES orders(orderID),
-	FOREIGN KEY (tableID) REFERENCES branchTables(tableID),
-	PRIMARY KEY (orderID, tableID)
-);
-
-CREATE TABLE IF NOT EXISTS  DeliveredOrders(
-	orderID  INT REFERENCES orders,
-	deliveryemployeeID INT REFERENCES employees(employeeID),
-	ArrivalDateByCust timestamptz,
-	ArrivalDateByEmp timestamptz,
-	PRIMARY KEY (orderID)
+-- create Index
+CREATE TABLE IF NOT EXISTS  delivered_orders(
+	order_id  INT REFERENCES orders,
+	delivery_employee_id INT REFERENCES employees(employee_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+	arrival_date_by_customer timestamptz,
+	arrival_date_by_employee timestamptz,
+	PRIMARY KEY (order_id)
 );
 
 -- Bookings Tables
 CREATE TABLE IF NOT EXISTS  bookings(
-	bookingID INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	customerID INT REFERENCES customers,
-	tableID INT ,
-	branchID INT ,
-	bookingDate TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
-	bookingStartTime TIMESTAMPTZ NOT NULL,
-	bookingEndTime TIMESTAMPTZ NOT NULL,
-	bookingStatus order_status_type,
+	booking_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	customer_id INT REFERENCES customers ON DELETE RESTRICT ON UPDATE CASCADE,
+	table_id INT ,
+	branch_id INT ,
+	booking_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	booking_start_time TIMESTAMPTZ NOT NULL,
+	booking_end_time TIMESTAMPTZ NOT NULL,
+	booking_status order_status_type,
 
-	FOREIGN KEY (branchID, tableID) REFERENCES branchTables(branchID, tableID)
+	FOREIGN KEY (branch_id, table_id) REFERENCES branch_tables(branch_id, table_id)
 );
 
-CREATE TABLE IF NOT EXISTS  bookingsOrders(
-	bookingID INT REFERENCES bookings, 
-	orderID INT REFERENCES orders,
-	PRIMARY KEY (bookingID, orderID)
+CREATE TABLE IF NOT EXISTS  bookings_orders(
+	booking_id INT REFERENCES bookings ON DELETE RESTRICT ON UPDATE CASCADE, 
+	order_id INT REFERENCES orders ON DELETE RESTRICT ON UPDATE CASCADE,
+	PRIMARY KEY (booking_id, order_id)
 );
+-- create Index
