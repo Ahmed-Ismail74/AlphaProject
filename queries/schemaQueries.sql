@@ -10,7 +10,7 @@ DO $$
 DECLARE 
     tableName TEXT; 
 BEGIN 
-    FOR tableName IN SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' LOOP 
+    FOR tableName IN SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' and table_type = 'BASE TABLE' LOOP 
         EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(tableName) || ' CASCADE'; 
     END LOOP;
 	
@@ -20,7 +20,7 @@ END $$;
 -- Employees Tables
 CREATE TABLE IF NOT EXISTS employees(
 	employee_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY ,
-	employee_ssn CHAR(14) UNIQUE,
+	employee_ssn CHAR(14) UNIQUE NOT NULL,
 	employee_first_name VARCHAR(35) NOT NULL,
 	employee_last_name VARCHAR(35) NOT NULL,
 	employee_birthdate DATE,
@@ -42,7 +42,8 @@ CREATE TABLE IF NOT EXISTS salary_changes(
 	salary_change_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	employee_id INT REFERENCES employees(employee_id) ON DELETE RESTRICT ON UPDATE CASCADE,
 	change_made_by INT REFERENCES employees(employee_id) ON DELETE RESTRICT ON UPDATE CASCADE,
-	change_date TIMESTAMPTZ NOT NULL,
+	change_date TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	old_salary int NOT NULL CHECK (old_salary > 3000),
 	change_reason varchar(250)
 );
 
@@ -111,8 +112,8 @@ CREATE TABLE IF NOT EXISTS customers(
 	customer_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	customer_first_name VARCHAR(35) NOT NULL,
 	customer_last_name VARCHAR(35) NOT NULL,
-	customer_gender sex_type,
-	employee_birthdate DATE
+	customer_gender sex_type NOT NULL,
+	customer_birthdate DATE
 );
 
 CREATE TABLE IF NOT EXISTS customers_accounts(
