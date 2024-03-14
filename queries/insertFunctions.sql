@@ -72,7 +72,6 @@ BEGIN
 END;
 $$;
 
-
 -- FUNCTION to insert data into employees account using ssn
 CREATE OR REPLACE FUNCTION fn_insert_employee_account_ssn(
 	f_employee_ssn varchar(14),
@@ -87,16 +86,20 @@ DECLARE
 BEGIN
 	SELECT employee_id INTO f_employee_id FROM employees WHERE employee_ssn =  f_employee_ssn;
 	IF FOUND THEN
-		INSERT INTO employees_accounts (
-			employee_id,
-			employee_email,
-			employee_password
-		) VALUES (
-			f_employee_id,
-			f_email,
-			f_password
-		);
-		RETURN 'Account added';
+		IF EXISTS (SELECT 1 FROM employees_accounts WHERE employee_email = f_email) THEN
+			RETURN 'Account existed';
+		ELSE
+			INSERT INTO employees_accounts (
+				employee_id,
+				employee_email,
+				employee_password
+			) VALUES (
+				f_employee_id,
+				f_email,
+				f_password
+			);
+			RETURN 'Account added';
+		END IF;
 	ELSE
 		RETURN ('Employee with SSN ' || f_employee_ssn ||' not found');
 --         RAISE EXCEPTION 'Employee with SSN % not found', f_employee_ssn;
