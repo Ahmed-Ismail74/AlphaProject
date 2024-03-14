@@ -51,8 +51,8 @@ CREATE TABLE IF NOT EXISTS employees_transfers(
 	transfer_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	employee_id INT REFERENCES employees(employee_id) ON DELETE RESTRICT ON UPDATE CASCADE,
 	newbranch_id INT , -- Foreign key altered after create branch table
-	transfer_made_by INT REFERENCES employees(employee_id) ON DELETE RESTRICT ON UPDATE CASCADE,
-	transfer_date TIMESTAMPTZ NOT NULL,
+	transfer_made_by INT REFERENCES branches_managers(manager_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+	transfer_date TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	transfer_reason varchar(250)
 );
 
@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS  employee_attendance(
 
 CREATE TABLE IF NOT EXISTS positions(
 	position_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	position_name varchar(25) NOT NULL,
+	position_name varchar(25) NOT NULL UNIQUE,
 	job_description varchar(255)
 );
 CREATE TABLE IF NOT EXISTS positions_changes(
@@ -166,7 +166,7 @@ CREATE TABLE IF NOT EXISTS  categories(
 	category_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	section_id INT REFERENCES sections ON DELETE RESTRICT ON UPDATE CASCADE,
 	category_name VARCHAR(35) UNIQUE NOT NULL,
-	category_description	VARCHAR(254)
+	category_description VARCHAR(254)
 );
 
 
@@ -174,8 +174,15 @@ CREATE TABLE IF NOT EXISTS  branches(
 	branch_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	branch_name VARCHAR(35) UNIQUE NOT NULL,
 	branch_address VARCHAR(95) NOT NULL,
-	branch_phone VARCHAR(15) NOT NULL CHECK (branch_phone  ~ '^[0-9]+$'),
-	manager_id INT REFERENCES employees (employee_id) ON DELETE RESTRICT ON UPDATE CASCADE
+	branch_phone VARCHAR(15) CHECK (branch_phone  ~ '^[0-9]+$'),
+	branch_created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS  branches_managers(
+	branch_id INT REFERENCES branches (branch_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+	manager_id INT REFERENCES employees (employee_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+	PRIMARY KEY(branch_id, manager_id)
+	
 );
 
 ALTER TABLE employees_transfers ADD CONSTRAINT  employees_transfers_newbranch_id_fkey
@@ -212,13 +219,11 @@ CREATE TABLE IF NOT EXISTS  branch_sections(
 );
 -- create Index
 
-CREATE SEQUENCE IF NOT EXISTS table_id_seq;
-
 CREATE TABLE IF NOT EXISTS  branch_tables(
 	branch_id INT REFERENCES branches ON DELETE RESTRICT ON UPDATE CASCADE,
-	table_id INT NOT NULL DEFAULT nextval('table_id_seq') UNIQUE,
+	table_id INT NOT NULL ,
 	table_status table_status_type,
-	capacity SMALLINT CHECK (capacity >= 0),
+	capacity SMALLINT CHECK (capacity >= 0) NOT NULL,
 	PRIMARY KEY (branch_id, table_id)
 );
 -- create Index
@@ -410,9 +415,10 @@ CREATE TABLE IF NOT EXISTS  offline_orders_items(
 
 CREATE TABLE IF NOT EXISTS  lounge_orders(
 	order_id  INT ,
+	branch_id INT,
 	table_id INT ,
 	FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE RESTRICT ON UPDATE CASCADE,
-	FOREIGN KEY (table_id) REFERENCES branch_tables(table_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+	FOREIGN KEY (branch_id,table_id) REFERENCES branch_tables(branch_id,table_id) ON DELETE RESTRICT ON UPDATE CASCADE,
 	PRIMARY KEY (order_id, table_id)
 );
 

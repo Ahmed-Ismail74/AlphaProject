@@ -9,7 +9,6 @@ BEGIN
         CREATE TYPE ingredients_unit_type AS ENUM ('gram', 'milliliter', 'liter', 'piece','kilogram');
     END IF;
 	
-	
 	IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'friend_request_type') THEN
         CREATE TYPE friend_request_type AS ENUM ('pending', 'accepted', 'rejected');
     END IF;
@@ -39,7 +38,7 @@ BEGIN
     END IF;
 	
 	IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_type') THEN
-        CREATE TYPE order_type AS ENUM ('delivey','lounge','takeaway');
+        CREATE TYPE order_type AS ENUM ('delivey','dine-in','take away');
     END IF;
 	
 	IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'payment_method_type') THEN
