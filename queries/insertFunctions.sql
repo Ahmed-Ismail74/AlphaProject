@@ -200,5 +200,3 @@ BEGIN
 	VALUES (f_section_id, f_category_name, f_category_description);
 END;
 $$
-
-
