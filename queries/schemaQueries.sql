@@ -50,8 +50,9 @@ CREATE TABLE IF NOT EXISTS salary_changes(
 CREATE TABLE IF NOT EXISTS employees_transfers(
 	transfer_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	employee_id INT REFERENCES employees(employee_id) ON DELETE RESTRICT ON UPDATE CASCADE,
-	newbranch_id INT , -- Foreign key altered after create branch table
-	transfer_made_by INT REFERENCES branches_managers(manager_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+	old_branch_id INT,
+	new_branch_id INT , -- Foreign key altered after create branch table
+	transfer_made_by INT ,
 	transfer_date TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	transfer_reason varchar(250)
 );
@@ -106,6 +107,11 @@ CREATE TABLE IF NOT EXISTS positions_changes(
 	position_change_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS  employees_position(
+	employee_id INT REFERENCES employees ON DELETE RESTRICT ON UPDATE CASCADE,
+	position_id INT REFERENCES positions ON DELETE RESTRICT ON UPDATE CASCADE,
+	PRIMARY KEY (employee_id, position_id)
+);
 
 -- Clients Tables
 CREATE TABLE IF NOT EXISTS customers(
@@ -185,8 +191,13 @@ CREATE TABLE IF NOT EXISTS  branches_managers(
 	
 );
 
-ALTER TABLE employees_transfers ADD CONSTRAINT  employees_transfers_newbranch_id_fkey
-FOREIGN KEY (newbranch_id) 
+ALTER TABLE employees_transfers ADD CONSTRAINT  employees_transfers_manager_id_fkey
+FOREIGN KEY (old_branch_id, transfer_made_by) 
+REFERENCES branches_managers(branch_id, manager_id) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+
+ALTER TABLE employees_transfers ADD CONSTRAINT  employees_transfers_new_branch_id_fkey
+FOREIGN KEY (new_branch_id) 
 REFERENCES branches(branch_id) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 
@@ -287,9 +298,10 @@ CREATE TABLE IF NOT EXISTS  branches_staff(
 	employee_id INT REFERENCES employees ON DELETE RESTRICT ON UPDATE CASCADE,
 	branch_id INT REFERENCES branches ON DELETE RESTRICT ON UPDATE CASCADE,
 	section_id INT REFERENCES sections ON DELETE RESTRICT ON UPDATE CASCADE,
-	position_id INT REFERENCES positions ON DELETE RESTRICT ON UPDATE CASCADE,
 	PRIMARY KEY (employee_id, branch_id)
 );
+
+
 
 -- create Index
 

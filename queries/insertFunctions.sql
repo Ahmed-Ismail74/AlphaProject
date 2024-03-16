@@ -1,3 +1,23 @@
+-- Funtion to add position
+CREATE OR REPLACE FUNCTION fn_add_position(
+	f_position_name varchar(25) ,
+	f_job_description varchar(255) DEFAULT NULL
+)
+RETURNS VARCHAR
+LANGUAGE PLPGSQL
+AS $$
+BEGIN
+	IF EXISTS (SELECT 1 FROM positions WHERE position_name = f_position_name) THEN
+		RETURN 'Position already exist';
+	ELSE
+		INSERT INTO positions(position_name, job_description)
+		VALUES (f_position_name, f_job_description);
+		RETURN 'position added';
+	END IF;
+END;
+$$;
+
+
 -- FUNCTION to ADD employee
 CREATE OR REPLACE FUNCTION fn_add_employee(
 	ssn CHAR(14),
@@ -6,6 +26,9 @@ CREATE OR REPLACE FUNCTION fn_add_employee(
 	gender sex_type,
 	salary INT,
 	status employee_status_type DEFAULT 'pending',
+	f_position_id INT DEFAULT NULL,
+	f_branch_id INT DEFAULT NULL,
+	f_section_id INT DEFAULT NULL,
 	birthdate DATE DEFAULT NULL,
 	address VARCHAR(255) DEFAULT NULL,
 	date_hired timestamptz DEFAULT CURRENT_TIMESTAMP
@@ -13,6 +36,8 @@ CREATE OR REPLACE FUNCTION fn_add_employee(
 RETURNS VARCHAR	
 LANGUAGE PLPGSQL
 AS $$
+DECLARE
+	f_employee_id INT;
 BEGIN 
 	IF EXISTS (SELECT 1 FROM employees WHERE ssn = employee_ssn) THEN
 		RETURN 'SSN existed';
@@ -37,7 +62,18 @@ BEGIN
 			salary,
 			status,
 			gender
-		);
+		) RETURNING employee_id INTO f_employee_id;
+		
+		IF f_branch_id IS NOT NULL AND f_section_id IS NOT NULL  THEN 
+			INSERT INTO branches_staff(employee_id, branch_id, section_id)
+			VALUES (f_employee_id, f_branch_id, f_sextion_id);
+		END IF;
+		
+		IF f_position_id IS NOT NULL THEN
+			INSERT INTO employees_position(employee_id, position_id)
+			VALUES(f_employee_id, f_position_id);
+		END IF;
+		
 		RETURN 'Employee added';
 	END IF;
 END;
@@ -122,7 +158,7 @@ AS $$
 DECLARE
 	f_branch_id INT;
 BEGIN
-	IF EXISTS (SELECT 1 FROM branches WHERE f_branch_name = branch_name) THEN
+	IF NOT EXISTS (SELECT 1 FROM branches WHERE f_branch_name = branch_name) THEN
 
 		INSERT INTO branches(branch_name,branch_address,branch_phone)
 		VALUES(f_branch_name,f_branch_address,f_branch_phone)
@@ -131,9 +167,7 @@ BEGIN
 		IF f_manager_id IS NOT NULL THEN
 			INSERT INTO branches_managers VALUES(f_branch_id, f_manager_id);
 		END IF;
-		
 		RETURN 'Branch added';
-		
 	ELSE
 		RETURN 'Branch Existed';
 	END IF;
@@ -172,7 +206,7 @@ AS $$
 BEGIN
 	INSERT INTO positions (position_name, job_description) VALUES (f_position_name, f_job_description);
 END;
-$$
+$$;
 
 
 -- FUNCTION to add new general section
@@ -185,7 +219,7 @@ AS $$
 BEGIN
 	INSERT INTO sections (section_name, section_description)VALUES (f_section_name, f_section_description);
 END;
-$$
+$$;
 
 -- Procedre to add new category 
 CREATE OR REPLACE FUNCTION fn_add_category(
@@ -199,4 +233,4 @@ BEGIN
 	INSERT INTO categories (section_id, category_name, category_description)
 	VALUES (f_section_id, f_category_name, f_category_description);
 END;
-$$
+$$;

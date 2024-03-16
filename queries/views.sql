@@ -26,6 +26,7 @@ FROM branches br
 LEFT JOIN branches_managers ON br.branch_id = branches_managers.branch_id
 LEFT JOIN employees ON branches_managers.manager_id = employees.employee_id;
 
+SELECT * FROM vw_branches;
 
 --categories details view  
 CREATE VIEW vw_categories(
