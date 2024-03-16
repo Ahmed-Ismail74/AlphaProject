@@ -16,8 +16,8 @@ SELECT fn_add_position('branch manager', 'responsible for hiring applicants, let
 SELECT * FROM positions;
 
 ---------------------------------------------------------------------------------------
-SELECT fn_add_branch('embaba', '14st sjadhjas jas', '01115454545');
-SELECT fn_add_branch('shobra', '52st sjadhjas jas', '01215452545');
+SELECT fn_add_branch('embaba', '14st sjadhjas jas', f_branch_phone => '01115454545',f_location_coordinates => POINT(40.7128, -74.0060));
+SELECT fn_add_branch('shobra', '52st sjadhjas jas', f_branch_phone => '01215452545',f_location_coordinates => POINT(41.7128, -74.0060));
 SELECT * FROM branches;
 ---------------------------------------------------------------------------------------
 SELECT fn_add_general_section('takeout counter', 'A designated area or counter for handling takeout, delivery, or to-go orders.');
@@ -29,16 +29,16 @@ SELECT fn_add_general_section('bartender station', 'This is the central workspac
 SELECT fn_add_general_section('managing section', 'Managing sections involves assigning servers, bartenders, and other personnel to their respective sections based on factors such as experience, skill level, and workload.');
 SELECT * FROM sections;
 ---------------------------------------------------------------------------------------
-SELECT fn_add_branch_sections(1, 2);
-SELECT fn_add_branch_sections(1, 3);
-SELECT fn_add_branch_sections(1, 4);
-SELECT fn_add_branch_sections(1, 1);
+SELECT fn_add_branch_sections(3, 2);
+SELECT fn_add_branch_sections(3, 3);
+SELECT fn_add_branch_sections(3, 4);
+SELECT fn_add_branch_sections(3, 1);
 SELECT fn_add_branch_sections(2, 5);
 SELECT fn_add_branch_sections(2, 6);
 SELECT fn_add_branch_sections(2, 4);
 SELECT * FROM branch_sections;
 ---------------------------------------------------------------------------------------
-SELECT fn_add_employee('3000123123123', 'ahmed', 'ismail', 'm', '5000', f_position_id => 1, f_branch_id => 1, f_section_id => 4);
+SELECT fn_add_employee('3000123123123', 'ahmed', 'ismail', 'm', '5000', f_position_id => 1, f_branch_id => 3, f_section_id => 4);
 SELECT fn_add_employee('3000548745123', 'ahmed', 'ehab', 'm', '8000', f_position_id => 10, f_branch_id => 2, f_section_id => 5);
 SELECT * FROM employees;
 SELECT * FROM employees_position;

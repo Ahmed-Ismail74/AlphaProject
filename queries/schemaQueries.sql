@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS employees_transfers(
 CREATE TABLE IF NOT EXISTS employees_call_list(
 	employees_phone_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	employee_id INT REFERENCES employees ON DELETE RESTRICT ON UPDATE CASCADE,
-	employees_phone VARCHAR(15) NOT NULL CHECK (employees_phone ~ '^[0-9]+$') 	
+	employees_phone VARCHAR(15) NOT NULL CHECK (employees_phone ~ '^[0-9]+$') UNIQUE
 );
 
 
@@ -175,13 +175,14 @@ CREATE TABLE IF NOT EXISTS  categories(
 	category_description VARCHAR(254)
 );
 
-
 CREATE TABLE IF NOT EXISTS  branches(
 	branch_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	branch_name VARCHAR(35) UNIQUE NOT NULL,
 	branch_address VARCHAR(95) NOT NULL,
-	branch_phone VARCHAR(15) CHECK (branch_phone  ~ '^[0-9]+$'),
-	branch_created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+	branch_phone VARCHAR(15) CHECK (branch_phone  ~ '^[0-9]+$') UNIQUE,
+	branch_created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	location_coordinates POINT NOT NULL,
+	coverage SMALLINT DEFAULT 10
 );
 
 CREATE TABLE IF NOT EXISTS  branches_managers(
@@ -327,7 +328,7 @@ CREATE TABLE IF NOT EXISTS  supply_companies_employees(
 CREATE TABLE IF NOT EXISTS  suppliers_call_list(
 	supplier_phone_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	supplier_id INT REFERENCES suppliers ON DELETE RESTRICT ON UPDATE CASCADE,
-	supplier_phone_number VARCHAR(15) NOT NULL CHECK (supplier_phone_number ~ '^[0-9]+$')	
+	supplier_phone_number VARCHAR(15) NOT NULL CHECK (supplier_phone_number ~ '^[0-9]+$') 
 );
 
 CREATE TABLE IF NOT EXISTS  supplier_addresses_list(

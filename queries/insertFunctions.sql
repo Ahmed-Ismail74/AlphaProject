@@ -149,6 +149,8 @@ $$;
 CREATE OR REPLACE FUNCTION fn_add_branch(
 	f_branch_name VARCHAR(35),
 	f_branch_address VARCHAR(95) ,
+	f_location_coordinates POINT ,
+	f_coverage SMALLINT DEFAULT 10,
 	f_branch_phone VARCHAR(15) DEFAULT NULL,
 	f_manager_id INT DEFAULT NULL
 )
@@ -160,8 +162,8 @@ DECLARE
 BEGIN
 	IF NOT EXISTS (SELECT 1 FROM branches WHERE f_branch_name = branch_name) THEN
 
-		INSERT INTO branches(branch_name,branch_address,branch_phone)
-		VALUES(f_branch_name,f_branch_address,f_branch_phone)
+		INSERT INTO branches(branch_name,branch_address,branch_phone, location_coordinates, coverage)
+		VALUES(f_branch_name,f_branch_address,f_branch_phone, f_location_coordinates, f_coverage)
 		RETURNING branch_id INTO f_branch_id;
 		
 		IF f_manager_id IS NOT NULL THEN
@@ -182,6 +184,7 @@ CREATE OR REPLACE FUNCTION fn_add_table(
 	f_capacity INT,
 	f_table_status table_status_type DEFAULT 'availabe'
 )
+RETURNS VOID
 LANGUAGE PLPGSQL
 AS $$
 BEGIN
@@ -238,12 +241,13 @@ BEGIN
 END;
 $$;
 
--- Procedre to add new category 
+-- FUNCTION to add new category 
 CREATE OR REPLACE FUNCTION fn_add_category(
 	f_section_id INT,
 	f_category_name VARCHAR(35),
 	f_category_description VARCHAR(254)
 )
+RETURNS VOID
 LANGUAGE PLPGSQL
 AS $$
 BEGIN
