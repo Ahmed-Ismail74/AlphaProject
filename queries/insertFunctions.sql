@@ -66,7 +66,7 @@ BEGIN
 		
 		IF f_branch_id IS NOT NULL AND f_section_id IS NOT NULL  THEN 
 			INSERT INTO branches_staff(employee_id, branch_id, section_id)
-			VALUES (f_employee_id, f_branch_id, f_sextion_id);
+			VALUES (f_employee_id, f_branch_id, f_section_id);
 		END IF;
 		
 		IF f_position_id IS NOT NULL THEN
@@ -214,10 +214,27 @@ CREATE OR REPLACE FUNCTION fn_add_general_section(
 	f_section_name VARCHAR(35),
 	f_section_description VARCHAR(254)
 )
+RETURNS VOID
 LANGUAGE PLPGSQL
 AS $$
 BEGIN
 	INSERT INTO sections (section_name, section_description)VALUES (f_section_name, f_section_description);
+END;
+$$;
+
+-- Funtion to add section to branch
+CREATE OR REPLACE FUNCTION fn_add_branch_sections(
+	fn_branch_id INT,
+	fn_section_id INT,
+	fn_manager_id INT DEFAULT NULL
+)
+RETURNS VARCHAR
+LANGUAGE PLPGSQL
+AS $$
+BEGIN
+	INSERT INTO branch_sections(branch_id,section_id,manager_id)
+	VALUES(fn_branch_id,fn_section_id,fn_manager_id);
+	RETURN 'section added to branch';
 END;
 $$;
 

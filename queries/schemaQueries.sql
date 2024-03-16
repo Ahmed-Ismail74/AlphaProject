@@ -296,8 +296,9 @@ CREATE TABLE IF NOT EXISTS  storages_stock(
 
 CREATE TABLE IF NOT EXISTS  branches_staff(
 	employee_id INT REFERENCES employees ON DELETE RESTRICT ON UPDATE CASCADE,
-	branch_id INT REFERENCES branches ON DELETE RESTRICT ON UPDATE CASCADE,
-	section_id INT REFERENCES sections ON DELETE RESTRICT ON UPDATE CASCADE,
+	branch_id INT,
+	section_id INT,
+	FOREIGN KEY (branch_id, section_id) REFERENCES branch_sections (branch_id, section_id) ON DELETE RESTRICT ON UPDATE CASCADE,
 	PRIMARY KEY (employee_id, branch_id)
 );
 
