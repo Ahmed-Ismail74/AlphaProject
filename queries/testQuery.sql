@@ -38,8 +38,8 @@ SELECT fn_add_branch_sections(2, 6);
 SELECT fn_add_branch_sections(2, 4);
 SELECT * FROM branch_sections;
 ---------------------------------------------------------------------------------------
-SELECT fn_add_employee('3000123123123', 'ahmed', 'ismail', 'm', '5000', f_position_id => 1, f_branch_id => 3, f_section_id => 4);
-SELECT fn_add_employee('3000548745123', 'ahmed', 'ehab', 'm', '8000', f_position_id => 10, f_branch_id => 2, f_section_id => 5);
+SELECT fn_add_employee('3000123123123', 'ahmed', 'ismail', 'm', '5000', f_position_id => 14, f_branch_id => 3, f_section_id => 4);
+SELECT fn_add_employee('3000548745123', 'ahmed', 'ehab', 'm', '8000', f_position_id => 15, f_branch_id => 2, f_section_id => 5);
 SELECT * FROM employees;
 SELECT * FROM employees_position;
 SELECT * FROM branches_staff;
