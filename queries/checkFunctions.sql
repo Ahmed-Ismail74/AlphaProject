@@ -15,7 +15,7 @@ AS $$
 DECLARE
 	f_customer_id INT;
 BEGIN
-	SELECT customer_id INTO f_customer_id FROM customers_accounts WHERE customer_email = f_customer_email AND f_customer_password = customer_password;
+	SELECT customer_id INTO f_customer_id FROM customers_accounts WHERE customer_email = f_customer_email AND crypt(f_customer_password, customer_password);
 	IF FOUND THEN
 		RETURN QUERY
 			SELECT customer_id, customer_first_name, customer_last_name
@@ -50,9 +50,11 @@ BEGIN
 	SELECT employee_id INTO f_employee_id FROM employees_accounts WHERE employee_email = f_employee_email AND crypt(f_employee_password, employee_password);
 	IF FOUND THEN
 		RETURN QUERY
-			SELECT employee_id, employee_first_name, employee_last_name, employee_status
+			SELECT employees.employee_id, employee_first_name, employee_last_name, employee_status, positions.position_name AS employee_position
 			FROM employees
-			WHERE employee_id = f_employee_id;
+			LEFT JOIN employees_position ON employees_position.employee_id = employees.employee_id
+			LEFT JOIN positions ON positions.position_id = employees_position.position_id
+			WHERE employees.employee_id = f_employee_id;
 	ELSE
 		RETURN ;
 	END IF;
