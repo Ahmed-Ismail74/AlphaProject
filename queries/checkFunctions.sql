@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Function to check customer account
 CREATE OR REPLACE FUNCTION fn_check_login_customer(
 	f_customer_email varchar(254),
@@ -45,7 +47,7 @@ AS $$
 DECLARE
 	f_employee_id INT;
 BEGIN
-	SELECT employee_id INTO f_employee_id FROM employees_accounts WHERE employee_email = f_employee_email AND f_employee_password = employee_password;
+	SELECT employee_id INTO f_employee_id FROM employees_accounts WHERE employee_email = f_employee_email AND crypt(f_employee_password, employee_password);
 	IF FOUND THEN
 		RETURN QUERY
 			SELECT employee_id, employee_first_name, employee_last_name, employee_status
