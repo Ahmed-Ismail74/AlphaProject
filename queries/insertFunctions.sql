@@ -84,7 +84,8 @@ $$;
 CREATE OR REPLACE FUNCTION fn_insert_employee_account(
     f_employee_id INT,
     f_email varchar(254),
-    f_password varchar(512)
+    f_password varchar(512),
+	f_salt varchar(16)
 )
 RETURNS VARCHAR
 LANGUAGE PLPGSQL
@@ -96,11 +97,13 @@ BEGIN
 		INSERT INTO employees_accounts (
 			employee_id,
 			employee_email,
-			employee_password
+			employee_password,
+			employee_salt
 		) VALUES (
 			f_employee_id,
 			f_email,
-			f_password
+			f_password,
+			f_salt
 		);
 		
 		RETURN 'Account added';
@@ -112,7 +115,8 @@ $$;
 CREATE OR REPLACE FUNCTION fn_insert_employee_account_ssn(
 	f_employee_ssn varchar(14),
     f_email varchar(254),
-    f_password varchar(512)
+    f_password varchar(512),
+	f_salt VARCHAR(16)
 )
 RETURNS VARCHAR
 LANGUAGE PLPGSQL
@@ -126,13 +130,15 @@ BEGIN
 			RETURN 'Account existed';
 		ELSE
 			INSERT INTO employees_accounts (
-				employee_id,
-				employee_email,
-				employee_password
+			employee_id,
+			employee_email,
+			employee_password,
+			employee_salt
 			) VALUES (
 				f_employee_id,
 				f_email,
-				f_password
+				f_password,
+				f_salt
 			);
 			RETURN 'Account added';
 		END IF;
@@ -182,7 +188,7 @@ $$;
 CREATE OR REPLACE FUNCTION fn_add_table(
 	f_branch_id INT,
 	f_capacity INT,
-	f_table_status table_status_type DEFAULT 'availabe'
+	f_table_status table_status_type DEFAULT 'available'
 )
 RETURNS VOID
 LANGUAGE PLPGSQL
@@ -195,22 +201,6 @@ BEGIN
 			f_table_status);
 END;
 $$;
-
-
-
-
---FUNCTION to add new postion 
-CREATE OR REPLACE FUNCTION fn_add_position(
-	f_position_name varchar(25) ,
-	f_job_description varchar(255) DEFAULT NULL
-)
-LANGUAGE PLPGSQL
-AS $$
-BEGIN
-	INSERT INTO positions (position_name, job_description) VALUES (f_position_name, f_job_description);
-END;
-$$;
-
 
 -- FUNCTION to add new general section
 CREATE OR REPLACE FUNCTION fn_add_general_section(
@@ -242,16 +232,72 @@ END;
 $$;
 
 -- FUNCTION to add new category 
-CREATE OR REPLACE FUNCTION fn_add_category(
+CREATE OR REPLACE PROCEDURE pr_add_category(
 	f_section_id INT,
 	f_category_name VARCHAR(35),
 	f_category_description VARCHAR(254)
 )
-RETURNS VOID
 LANGUAGE PLPGSQL
 AS $$
 BEGIN
 	INSERT INTO categories (section_id, category_name, category_description)
 	VALUES (f_section_id, f_category_name, f_category_description);
+END;
+$$;
+
+-- Procedure to add new storage 
+CREATE OR REPLACE PROCEDURE pr_add_storage(
+	pr_storage_name VARCHAR(35),
+	pr_storage_address VARCHAR(95),
+	pr_manager_id INT DEFAULT NULL
+)
+LANGUAGE PLPGSQL
+AS $$
+BEGIN
+	PERFORM 1 FROM storages WHERE storage_name = pr_storage_name;
+	IF FOUND THEN
+		RETURN;
+	ELSE
+		INSERT INTO storages (storage_name, storage_address, manager_id)
+		VALUES (pr_storage_name, pr_storage_address, pr_manager_id);
+	END IF;
+END;
+$$;
+
+-- Procedure to add new ingredient
+CREATE OR REPLACE PROCEDURE pr_add_ingredient(
+	pr_ingredients_name VARCHAR(35),
+	pr_recipe_ingredients_unit ingredients_unit_type ,
+	pr_shipment_ingredients_unit	ingredients_unit_type
+)
+LANGUAGE PLPGSQL
+AS $$
+BEGIN
+	PERFORM 1 FROM ingredients WHERE pr_ingredients_name = ingredients_name;
+	IF FOUND THEN
+		RETURN;
+	ELSE
+		INSERT INTO ingredients(ingredients_name, recipe_ingredients_unit, shipment_ingredients_unit)
+		VALUES (pr_ingredients_name, pr_recipe_ingredients_unit, pr_shipment_ingredients_unit);
+	END IF;
+END;
+$$;
+	
+-- Procedure to add new ingredient to the branch stock
+CREATE OR REPLACE PROCEDURE pr_add_ingredient_to_branch_stock(
+	p_branch_id INT,
+	p_ingredient_id INT,
+	p_ingredients_quantity NUMERIC(12, 3)
+)
+LANGUAGE PLPGSQL
+AS $$
+BEGIN
+	PERFORM 1 FROM branches_stock WHERE branch_id = p_branch_id AND ingredient_id = p_ingredient_id;
+	IF FOUND THEN
+		RETURN;
+	ELSE
+		INSERT INTO branches_stock(branch_id, ingredient_id, ingredients_quantity)
+		VALUES (p_branch_id, p_ingredient_id, p_ingredients_quantity);
+	END IF;
 END;
 $$;

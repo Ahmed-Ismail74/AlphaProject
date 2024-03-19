@@ -29,17 +29,17 @@ SELECT fn_add_general_section('bartender station', 'This is the central workspac
 SELECT fn_add_general_section('managing section', 'Managing sections involves assigning servers, bartenders, and other personnel to their respective sections based on factors such as experience, skill level, and workload.');
 SELECT * FROM sections;
 ---------------------------------------------------------------------------------------
-SELECT fn_add_branch_sections(3, 2);
-SELECT fn_add_branch_sections(3, 3);
-SELECT fn_add_branch_sections(3, 4);
-SELECT fn_add_branch_sections(3, 1);
+SELECT fn_add_branch_sections(1, 2);
+SELECT fn_add_branch_sections(1, 3);
+SELECT fn_add_branch_sections(1, 4);
+SELECT fn_add_branch_sections(1, 1);
 SELECT fn_add_branch_sections(2, 5);
 SELECT fn_add_branch_sections(2, 6);
 SELECT fn_add_branch_sections(2, 4);
 SELECT * FROM branch_sections;
 ---------------------------------------------------------------------------------------
-SELECT fn_add_employee('3000123123123', 'ahmed', 'ismail', 'm', '5000', f_position_id => 14, f_branch_id => 3, f_section_id => 4);
-SELECT fn_add_employee('3000548745123', 'ahmed', 'ehab', 'm', '8000', f_position_id => 15, f_branch_id => 2, f_section_id => 5);
+SELECT fn_add_employee('3000123123123', 'ahmed', 'ismail', 'm', '5000', f_position_id => 1, f_branch_id => 1, f_section_id => 4);
+SELECT fn_add_employee('3000548745123', 'ahmed', 'ehab', 'm', '8000', f_position_id => 12, f_branch_id => 2, f_section_id => 5);
 SELECT * FROM employees;
 SELECT * FROM employees_position;
 SELECT * FROM branches_staff;
@@ -47,3 +47,20 @@ SELECT * FROM branches_staff;
 SELECT fn_change_employee_position(4, 3, 9, 'promote');
 SELECT * FROM positions_changes;
 ---------------------------------------------------------------------------------------
+CALL  pr_add_storage('6 october', '1st october weqweqw');
+CALL  pr_add_storage('10th ramadan', '10st ramadan weqweqw', 1);
+SELECT * FROM storages;
+---------------------------------------------------------------------------------------
+CALL pr_add_ingredient('salt', 'gram', 'kilogram');
+CALL pr_add_ingredient('corn oil', 'milliliter', 'liter');
+CALL pr_add_ingredient('olive oil', 'milliliter', 'liter');
+CALL pr_add_ingredient('vegetable oil', 'milliliter', 'liter');
+CALL pr_add_ingredient('shea butter', 'gram', 'kilogram');
+CALL pr_add_ingredient('margarine ', 'gram', 'kilogram');
+CALL pr_add_ingredient('ghee ', 'gram', 'kilogram');
+CALL pr_add_ingredient('ocet', 'milliliter', 'liter');
+SELECT * FROM ingredients;
+---------------------------------------------------------------------------------------
+CALL pr_add_ingredient_to_branch_stock(1, 8, 100);
+CALL pr_add_ingredient_to_branch_stock(2, 8, 10.33);
+SELECT * FROM branches_stock;
