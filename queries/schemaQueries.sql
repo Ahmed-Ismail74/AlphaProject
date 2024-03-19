@@ -210,12 +210,7 @@ CREATE TABLE IF NOT EXISTS  storages(
 	manager_id INT REFERENCES employees (employee_id) ON DELETE RESTRICT ON UPDATE CASCADE,
 	storage_address VARCHAR(95) NOT NULL
 );
-CREATE TABLE IF NOT EXISTS  seasons(
-	season_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	season_name VARCHAR(35),
-	season_description VARCHAR(254)
 
-);
 
 CREATE TABLE IF NOT EXISTS  ingredients(
 	ingredient_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
@@ -248,7 +243,7 @@ CREATE TABLE IF NOT EXISTS  branches_stock(
 	ingredients_quantity NUMERIC(12, 3) CHECK (ingredients_quantity >= 0)
 );
 
-CREATE TABLE IF NOT EXISTS  menu_items(
+CREATE TABLE IF NOT EXISTS  menu_items	(
 	item_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	item_name VARCHAR(35) NOT NULL UNIQUE,
 	category_id INT REFERENCES categories ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -256,38 +251,47 @@ CREATE TABLE IF NOT EXISTS  menu_items(
 	preparation_time INTERVAL 
 );
 
-CREATE TABLE IF NOT EXISTS  branchs_menu(
-	branch_id INT REFERENCES branches ON DELETE RESTRICT ON UPDATE CASCADE,
-	item_id INT REFERENCES menu_items ON DELETE RESTRICT ON UPDATE CASCADE,
+CREATE TABLE IF NOT EXISTS  branches_menu(
+	branch_id INT REFERENCES branches ON DELETE RESTRICT ON UPDATE CASCADE NOT NULL,
+	item_id INT REFERENCES menu_items ON DELETE RESTRICT ON UPDATE CASCADE NOT NULL,
 	item_status menu_item_type,
-	item_discount NUMERIC(4, 2) check (item_discount > 0),
+	item_discount NUMERIC(4, 2) check (item_discount >= 0) DEFAULT 0 NOT NULL,
 	item_price NUMERIC(10, 2) check (item_price > 0) NOT NULL
 );
-
 CREATE TABLE IF NOT EXISTS  items_price_changes(
 	cost_change_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	branch_id INT REFERENCES branches ON DELETE RESTRICT ON UPDATE CASCADE,
-	item_id INT REFERENCES menu_items ON DELETE RESTRICT ON UPDATE CASCADE,
-	item_cost_changed_by INT REFERENCES employees(employee_id),
+	branch_id INT REFERENCES branches ON DELETE RESTRICT ON UPDATE CASCADE NOT NULL,
+	item_id INT REFERENCES menu_items ON DELETE RESTRICT ON UPDATE CASCADE NOT NULl,
+	item_cost_changed_by INT REFERENCES employees(employee_id) OT NULL,
 	change_type varchar(10) CHECK (change_type IN ('discount','price')),
-	new_value NUMERIC(10, 2) CHECK (new_value > 0)
+	new_value NUMERIC(10, 2) CHECK (new_value > 0) NOT NULL
+);
+
+
+CREATE TABLE IF NOT EXISTS  seasons(
+	season_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	season_name VARCHAR(35) NOT NULL,
+	season_description VARCHAR(254)
 );
 
 CREATE TABLE IF NOT EXISTS  items_seasons(
-	season_id INT REFERENCES seasons ON DELETE RESTRICT ON UPDATE CASCADE,
-	item_id INT REFERENCES menu_items ON DELETE RESTRICT ON UPDATE CASCADE,
+	season_id INT REFERENCES seasons ON DELETE RESTRICT ON UPDATE CASCADE NOT NULL,
+	item_id INT REFERENCES menu_items ON DELETE RESTRICT ON UPDATE CASCADE NOT NULL,
 	PRIMARY KEY (season_id, item_id)
 );
-
+CREATE TABLE IF NOT EXISTS  items_type_day_time(
+	item_id INT REFERENCES menu_items ON DELETE RESTRICT ON UPDATE CASCADE NOT NULL,
+	item_type item_day_type NOT NULL,
+	PRIMARY KEY (item_id, item_type)
+);
 -- create Index
 
 CREATE TABLE IF NOT EXISTS  recipes(
 	recipe_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	ingredient_id INT REFERENCES ingredients ON DELETE RESTRICT ON UPDATE CASCADE,
-	item_id INT REFERENCES menu_items ON DELETE RESTRICT ON UPDATE CASCADE,
+	ingredient_id INT REFERENCES ingredients ON DELETE RESTRICT ON UPDATE CASCADE NOT NULL,
+	item_id INT REFERENCES menu_items ON DELETE RESTRICT ON UPDATE CASCADE NOT NULL,
 	quantity NUMERIC(5, 3) NOT NULL,
-	recipe_status recipe_type
-	
+	recipe_status recipe_type NOT NULL
 );
 CREATE TABLE IF NOT EXISTS  storages_stock(
 	storage_id INT REFERENCES storages ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -372,14 +376,13 @@ CREATE TABLE IF NOT EXISTS  ingredients_shipments(
 
 CREATE TABLE IF NOT EXISTS  shipments_details(
 	shipment_id INT REFERENCES ingredients_shipments ON DELETE RESTRICT ON UPDATE CASCADE,
-	supplier_id INT REFERENCES suppliers ON DELETE RESTRICT ON UPDATE CASCADE,
-	ingredient_id INT REFERENCES ingredients ON DELETE RESTRICT ON UPDATE CASCADE,
-	ingredient_quantity NUMERIC(12, 2) CHECK (ingredient_quantity > 0),
-	price_per_unit NUMERIC(10,2),
+	supplier_id INT REFERENCES suppliers ON DELETE RESTRICT ON UPDATE CASCADE NOT NULL,
+	ingredient_id INT REFERENCES ingredients ON DELETE RESTRICT ON UPDATE CASCADE NOT NULL,
+	ingredient_quantity NUMERIC(12, 2) CHECK (ingredient_quantity > 0) NOT NULL,
+	price_per_unit NUMERIC(10,2) NOT NULL,
 	arrival_time TIMESTAMPTZ,
 	ingredient_shipment_status order_status_type
 );
-
 -- orders Tables
 
 CREATE TABLE IF NOT EXISTS  orders(
@@ -392,8 +395,8 @@ CREATE TABLE IF NOT EXISTS  orders(
 	ship_date TIMESTAMPTZ,
 	order_type order_type ,
 	order_staus order_status_type,
-	order_total_price NUMERIC(10,2) CHECK (order_total_price > 0),
-	order_customer_discount NUMERIC(4,2) CHECK (order_customer_discount > 0),
+	order_total_price NUMERIC(10,2) CHECK (order_total_price > 0) NOT NULL,
+	order_customer_discount NUMERIC(4,2) CHECK (order_customer_discount > 0) DEFAULT 0 NOT NULL,
 	order_payment_method payment_method_type
 );
 
@@ -412,7 +415,7 @@ CREATE TABLE IF NOT EXISTS  virtual_orders_items(
 	customer_id  INT REFERENCES customers ON DELETE RESTRICT ON UPDATE CASCADE,
 	item_id INT REFERENCES menu_items ON DELETE RESTRICT ON UPDATE CASCADE,
 	quantity SMALLINT CHECK (quantity > 0) NOT NULL,
-	quote_price NUMERIC(6,2) CHECK (quote_price > 0),
+	quote_price NUMERIC(6,2) CHECK (quote_price > 0) NOT NULL,
 	PRIMARY KEY (order_id, customer_id, item_id)
 );
 

@@ -44,5 +44,9 @@ BEGIN
 	IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'payment_method_type') THEN
         CREATE TYPE payment_method_type AS ENUM ('cash','when recieving','credit');
     END IF;
+	
+	IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'item_day_type') THEN
+        CREATE TYPE item_day_type AS ENUM ('breakfast','lunch','dinner', 'brunch', 'supper', 'midnight snack');
+    END IF;
 END
 $$;
