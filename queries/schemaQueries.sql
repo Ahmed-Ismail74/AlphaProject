@@ -33,7 +33,8 @@ CREATE TABLE IF NOT EXISTS employees(
 CREATE TABLE IF NOT EXISTS employees_accounts(
 	employee_id INT REFERENCES employees ON DELETE RESTRICT ON UPDATE CASCADE,
 	employee_email varchar(254) NOT NULL UNIQUE,
-	employee_password varchar(512) NOT NULL,
+	employee_password varchar(60) NOT NULL,
+	employee_salt varchar(14) NOT NULL,
 	account_created_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 	PRIMARY KEY (employee_id)
 );
@@ -126,7 +127,8 @@ CREATE TABLE IF NOT EXISTS customers_accounts(
 	account_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	customer_id INT REFERENCES customers ON DELETE RESTRICT ON UPDATE CASCADE,
 	customer_email varchar(254) NOT NULL UNIQUE,
-	customer_password varchar(512) NOT NULL,
+	customer_password varchar(60) NOT NULL,
+	customer_salt varchar(14) NOT NULL,
 	account_created_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -204,10 +206,10 @@ REFERENCES branches(branch_id) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 CREATE TABLE IF NOT EXISTS  storages(
 	storage_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	storage_name VARCHAR(35) NOT NULL UNIQUE,
 	manager_id INT REFERENCES employees (employee_id) ON DELETE RESTRICT ON UPDATE CASCADE,
 	storage_address VARCHAR(95) NOT NULL
 );
-
 CREATE TABLE IF NOT EXISTS  seasons(
 	season_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	season_name VARCHAR(35),
@@ -243,7 +245,7 @@ CREATE TABLE IF NOT EXISTS  branch_tables(
 CREATE TABLE IF NOT EXISTS  branches_stock(
 	branch_id INT REFERENCES branches ON DELETE RESTRICT ON UPDATE CASCADE,
 	ingredient_id INT REFERENCES ingredients ON DELETE RESTRICT ON UPDATE CASCADE,
-	ingredients_quantity SMALLINT CHECK (ingredients_quantity >= 0)
+	ingredients_quantity NUMERIC(12, 3) CHECK (ingredients_quantity >= 0)
 );
 
 CREATE TABLE IF NOT EXISTS  menu_items(
@@ -283,11 +285,10 @@ CREATE TABLE IF NOT EXISTS  recipes(
 	recipe_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	ingredient_id INT REFERENCES ingredients ON DELETE RESTRICT ON UPDATE CASCADE,
 	item_id INT REFERENCES menu_items ON DELETE RESTRICT ON UPDATE CASCADE,
-	quantity smallint NOT NULL,
+	quantity NUMERIC(5, 3) NOT NULL,
 	recipe_status recipe_type
 	
 );
-
 CREATE TABLE IF NOT EXISTS  storages_stock(
 	storage_id INT REFERENCES storages ON DELETE RESTRICT ON UPDATE CASCADE,
 	ingredient_id INT REFERENCES ingredients ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -373,12 +374,11 @@ CREATE TABLE IF NOT EXISTS  shipments_details(
 	shipment_id INT REFERENCES ingredients_shipments ON DELETE RESTRICT ON UPDATE CASCADE,
 	supplier_id INT REFERENCES suppliers ON DELETE RESTRICT ON UPDATE CASCADE,
 	ingredient_id INT REFERENCES ingredients ON DELETE RESTRICT ON UPDATE CASCADE,
-	ingredient_quantity SMALLINT CHECK (ingredient_quantity > 0),
+	ingredient_quantity NUMERIC(12, 2) CHECK (ingredient_quantity > 0),
 	price_per_unit NUMERIC(10,2),
 	arrival_time TIMESTAMPTZ,
 	ingredient_shipment_status order_status_type
 );
-
 
 -- orders Tables
 
