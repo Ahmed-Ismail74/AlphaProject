@@ -22,7 +22,7 @@ BEGIN
     END IF;
 	
 	IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'table_status_type') THEN
-        CREATE TYPE table_status_type AS ENUM ('availabe', 'booked');
+        CREATE TYPE table_status_type AS ENUM ('available', 'booked');
     END IF;
 	
 	IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'menu_item_type') THEN
