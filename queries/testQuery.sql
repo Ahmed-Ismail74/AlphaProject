@@ -64,3 +64,29 @@ SELECT * FROM ingredients;
 CALL pr_add_ingredient_to_branch_stock(1, 8, 100);
 CALL pr_add_ingredient_to_branch_stock(2, 8, 10.33);
 SELECT * FROM branches_stock;
+---------------------------------------------------------------------------------------
+CALL pr_add_category(1, 'salads', 'a wide variety of dishes including: green salads; vegetable salads; long beans; salads of pasta, legumes, or grains; mixed salads incorporating meat, poultry, or seafood; and fruit salads. They often include vegetables and fruits.');
+SELECT * FROM categories;
+---------------------------------------------------------------------------------------
+CALL pr_menu_item('coleslaw', 'is a side dish consisting primarily of finely shredded raw cabbage[2] with a salad dressing or condiment, commonly either vinaigrette or mayonnaise.', 1, '30 minutes'::interval)
+CALL pr_menu_item('baba ghanoush', 'is a Levantine appetizer consisting of finely chopped roasted eggplant, olive oil, lemon juice, various seasonings, and tahini.', 1)
+CALL pr_menu_item('saksuka', 'a Turkish side dish or meze made of vegetables cooked in olive oil. The particular vegetable may vary from region to region, but eggplant is a common choice.', p_preparation_time => '15 minutes'::interval)
+SELECT * FROM menu_items;
+---------------------------------------------------------------------------------------
+CALL pr_add_item_branch_menu(1, 1, 200);
+CALL pr_add_item_branch_menu(1, 1, 200, 'inactive', 1);
+CALL pr_add_item_branch_menu(2, 2, 150, 'inactive');
+SELECT * FROM branches_menu;
+---------------------------------------------------------------------------------------
+CALL pr_add_recipes(1, 8, 10);
+CALL pr_add_recipes(1, 10, 15, 'optional');
+SELECT * FROM recipes;
+---------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------

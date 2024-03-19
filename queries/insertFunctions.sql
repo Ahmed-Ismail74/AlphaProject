@@ -301,3 +301,80 @@ BEGIN
 	END IF;
 END;
 $$;
+
+-- Procedure to add new menu item
+CREATE OR REPLACE PROCEDURE pr_menu_item(
+	p_item_name VARCHAR(35),
+	p_item_description VARCHAR(254),
+	p_category_id INT DEFAULT NULL,
+	p_preparation_time INTERVAL DEFAULT NULL
+)
+LANGUAGE PLPGSQL
+AS $$
+BEGIN
+	PERFORM 1 FROM menu_items WHERE p_item_name = item_name;
+	IF FOUND THEN
+		RETURN;
+	ELSE
+		INSERT INTO menu_items(item_name, item_description, category_id, preparation_time)
+		VALUES (p_item_name, P_item_description, p_category_id, p_preparation_time);
+	END IF;
+END;
+$$;
+
+-- Procedure to add an item to a branch menu
+CREATE OR REPLACE PROCEDURE pr_add_item_branch_menu(
+	p_branch_id INT ,
+	p_item_id INT,
+	p_item_price NUMERIC(10, 2),
+	p_item_status menu_item_type DEFAULT 'active',
+	p_item_discount NUMERIC(4, 2) DEFAULT 0
+)
+LANGUAGE PLPGSQL
+AS $$
+BEGIN
+	PERFORM 1 FROM branches WHERE p_branch_id = branch_id;
+	IF FOUND THEN
+		PERFORM 1 FROM menu_items WHERE p_item_id = item_id;
+		IF FOUND THEN
+			INSERT INTO branches_menu(branch_id, item_id, item_status, item_price, item_discount)
+			VALUES (p_branch_id, p_item_id, p_item_status, p_item_price, p_item_discount);
+		ELSE
+			RETURN;
+		END IF;
+	ELSE
+		RETURN;
+	END IF;
+END;
+$$;
+
+
+-- Procedure to recipes of menu item
+CREATE OR REPLACE PROCEDURE pr_add_recipes(
+	p_item_id INT,
+	p_ingredient_id INT,
+	p_quantity NUMERIC(5, 3) ,
+	p_recipe_status recipe_type DEFAULT 'required'
+)
+LANGUAGE PLPGSQL
+AS $$
+BEGIN
+	PERFORM 1 FROM ingredients WHERE ingredient_id = p_ingredient_id;
+	IF FOUND THEN
+		PERFORM 1 FROM menu_items WHERE item_id = p_item_id;
+		IF FOUND THEN
+			INSERT INTO recipes(ingredient_id, item_id, quantity, recipe_status)
+			VALUES(p_ingredient_id, p_item_id, p_quantity, p_recipe_status);
+		END IF;
+	END IF;
+END;
+$$;
+
+
+
+
+
+
+
+
+

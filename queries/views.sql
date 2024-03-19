@@ -37,3 +37,31 @@ CREATE OR REPLACE VIEW vw_categories(
 AS SELECT categories.category_name, sections.section_name, categories.category_description
 FROM categories
 JOIN sections ON sections.section_id = categories.section_id;
+
+
+
+
+-- View to show recipes information of all menu items 
+CREATE OR REPLACE VIEW vw_recipes(
+	item_id ,
+	item_name ,
+	ingredient_name,
+	ingredient_unit ,
+	quantity ,
+	recipe_status 
+)
+AS SELECT mi.item_id, mi.item_name, ing.ingredients_name, ing.recipe_ingredients_unit, rec.quantity, rec.recipe_status FROM menu_items mi
+LEFT JOIN recipes rec ON rec.item_id = mi.item_id 
+LEFT JOIN ingredients  ing ON ing.ingredient_id = rec.ingredient_id;
+
+
+
+
+
+
+
+
+
+
+
+
