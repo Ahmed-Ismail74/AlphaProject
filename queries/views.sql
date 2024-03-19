@@ -17,16 +17,16 @@ LEFT JOIN positions ON positions.position_id = e_po.position_id
 
 --branches details view  
 CREATE OR REPLACE VIEW vw_branches (
+	branch_id,
 	branch_name,
 	manager_name,
 	branch_phone,
 	branch_address
 )
-AS SELECT br.branch_name, (employees.employee_first_name || ' ' || employees.employee_last_name) AS manager_name, br.branch_phone, br.branch_address
+AS SELECT br.branch_id, br.branch_name, (employees.employee_first_name || ' ' || employees.employee_last_name) AS manager_name, br.branch_phone, br.branch_address
 FROM branches br
 LEFT JOIN branches_managers ON br.branch_id = branches_managers.branch_id
 LEFT JOIN employees ON branches_managers.manager_id = employees.employee_id;
-
 
 --categories details view  
 CREATE OR REPLACE VIEW vw_categories(
